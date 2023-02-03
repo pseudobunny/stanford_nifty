@@ -1,6 +1,5 @@
 use anyhow::{anyhow, Result};
-use select::{document::Document, predicate::Name};
-use std::{collections::HashSet, str::FromStr};
+use std::str::FromStr;
 
 #[derive(PartialEq, Eq, Hash, Clone)]
 pub struct WikiPage {
@@ -35,23 +34,11 @@ impl WikiPage {
         }
     }
 
-    pub fn name(self) -> String {
-        self.name
+    pub fn name(&self) -> String {
+        self.name.clone()
     }
 
-    pub fn get_link(self) -> String {
+    pub fn get_link(&self) -> String {
         format!("{}{}", WikiPage::WIKI_LINK_BASE, self.name)
-    }
-
-    pub async fn get_linked_pages(self) -> Result<HashSet<WikiPage>> {
-        let res = reqwest::get(self.get_link()).await?.text().await?;
-
-        let linked_pages = Document::from(res.as_str())
-            .find(Name("a"))
-            .filter_map(|n| n.attr("href"))
-            .flat_map(|l| WikiPage::from_str(l))
-            .collect::<Vec<WikiPage>>();
-
-        Ok(HashSet::from_iter(linked_pages))
     }
 }
