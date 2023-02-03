@@ -1,5 +1,5 @@
 use anyhow::Result;
-use wiki_page_request_cache::{get_linked_pages, new_request_cache};
+use wiki_racer::WikiRacer;
 
 mod wiki_page_name;
 mod wiki_page_request_cache;
@@ -9,14 +9,16 @@ use crate::wiki_page_name::WikiPage;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let initial_page = WikiPage::new("Mystery_Seeker");
+    let initial_page = WikiPage::new("Apple");
+    let target_page = WikiPage::new("Orange_(fruit)");
 
-    let mut request_cache = new_request_cache();
+    let mut wiki_racer = WikiRacer::new(initial_page, target_page)?;
 
-    get_linked_pages(&mut request_cache, &initial_page.get_link())
+    wiki_racer
+        .find_best_wiki_ladder()
         .await?
-        .into_iter()
-        .for_each(|x| println!("{}", x.name()));
+        .iter()
+        .for_each(|p| println!("{}", p.name()));
 
     Ok(())
 }
