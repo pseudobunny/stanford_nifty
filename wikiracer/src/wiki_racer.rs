@@ -66,6 +66,7 @@ impl WikiRacer {
             let linked_pages = self.get_linked_pages_from_cache(&page.get_link()).await?;
 
             let mut new_ladder = ladder.clone();
+            self.visited_pages.insert(page.clone());
             new_ladder.push(page);
 
             if linked_pages.contains(&self.target_page) {

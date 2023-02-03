@@ -34,8 +34,8 @@ impl WikiPage {
         }
     }
 
-    pub fn name(&self) -> String {
-        self.name.clone()
+    pub fn name(&self) -> &String {
+        &self.name
     }
 
     pub fn get_link(&self) -> String {
