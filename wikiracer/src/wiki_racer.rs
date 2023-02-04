@@ -1,8 +1,8 @@
 use anyhow::{anyhow, Ok, Result};
 use std::collections::HashSet;
 
-use crate::wiki_page_request_cache::{get_linked_pages, WikiPageRequestCache};
-use crate::{wiki_page_name::WikiPage, wiki_page_request_cache::new_request_cache};
+use crate::wiki_page_name::WikiPage;
+use crate::wiki_page_request::{get_all_sublinks, get_linked_pages_request};
 use priority_queue::PriorityQueue;
 
 type WikiLadder = Vec<WikiPage>;
@@ -11,11 +11,11 @@ pub struct WikiRacer {
     ladder_queue: PriorityQueue<WikiLadder, usize>,
     visited_pages: HashSet<WikiPage>,
     target_page: WikiPage,
-    request_cache: WikiPageRequestCache,
+    target_page_links: HashSet<WikiPage>,
 }
 
 impl WikiRacer {
-    pub fn new(initial_page: WikiPage, target_page: WikiPage) -> Result<WikiRacer> {
+    pub async fn new(initial_page: WikiPage, target_page: WikiPage) -> Result<WikiRacer> {
         let mut ladder_queue = PriorityQueue::new();
         ladder_queue.push(vec![initial_page.clone()], 0);
 
@@ -26,7 +26,7 @@ impl WikiRacer {
             ladder_queue,
             visited_pages,
             target_page: target_page.clone(),
-            request_cache: new_request_cache(),
+            target_page_links: get_linked_pages_request(&target_page.get_link()).await?,
         };
 
         Ok(racer)
@@ -49,22 +49,26 @@ impl WikiRacer {
             .ok_or(anyhow!("Could not pop a ladder from the queue"))?
             .0;
 
+        println!("Current Highest Priority Ladder: {:?}", ladder.clone());
+
         let page_to_process = ladder
             .last()
             .ok_or(anyhow!("The ladder did not have a last page"))?
             .clone();
 
-        let page_to_process_linked_pages = self
-            .get_linked_pages_from_cache(&page_to_process.get_link())
-            .await?;
+        let page_to_process_linked_pages =
+            get_linked_pages_request(&page_to_process.get_link()).await?;
 
         let visited_pages = &self.visited_pages.clone();
 
         let new_pages_for_ladder = page_to_process_linked_pages.difference(visited_pages);
 
-        for page in new_pages_for_ladder.cloned() {
-            let linked_pages = self.get_linked_pages_from_cache(&page.get_link()).await?;
+        println!("Number of subpages to process: {}", new_pages_for_ladder.clone().count());
 
+        let sub_pages_tuples =
+            get_all_sublinks(new_pages_for_ladder.into_iter().cloned().collect()).await?;
+
+        for (page, linked_pages) in sub_pages_tuples {
             let mut new_ladder = ladder.clone();
             self.visited_pages.insert(page.clone());
             new_ladder.push(page);
@@ -83,15 +87,7 @@ impl WikiRacer {
         Ok(None)
     }
 
-    async fn determine_priority(&mut self, linked_pages: &HashSet<WikiPage>) -> Result<usize> {
-        Ok(self
-            .get_linked_pages_from_cache(&self.target_page.get_link())
-            .await?
-            .intersection(linked_pages)
-            .count())
-    }
-
-    async fn get_linked_pages_from_cache(&mut self, page_url: &str) -> Result<HashSet<WikiPage>> {
-        get_linked_pages(&mut self.request_cache, page_url).await
+    async fn determine_priority(&self, linked_pages: &HashSet<WikiPage>) -> Result<usize> {
+        Ok(self.target_page_links.intersection(linked_pages).count())
     }
 }

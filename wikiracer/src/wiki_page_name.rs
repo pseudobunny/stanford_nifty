@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use std::str::FromStr;
 
-#[derive(PartialEq, Eq, Hash, Clone)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct WikiPage {
     name: String,
 }
