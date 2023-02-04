@@ -63,7 +63,10 @@ impl WikiRacer {
 
         let new_pages_for_ladder = page_to_process_linked_pages.difference(visited_pages);
 
-        println!("Number of subpages to process: {}", new_pages_for_ladder.clone().count());
+        println!(
+            "Number of subpages to process: {}",
+            new_pages_for_ladder.clone().count()
+        );
 
         let sub_pages_tuples =
             get_all_sublinks(new_pages_for_ladder.into_iter().cloned().collect()).await?;

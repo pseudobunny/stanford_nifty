@@ -1,4 +1,6 @@
-use anyhow::Result;
+use std::env;
+
+use anyhow::{anyhow, Result};
 use wiki_racer::WikiRacer;
 
 mod wiki_page_name;
@@ -9,8 +11,14 @@ use crate::wiki_page_name::WikiPage;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let initial_page = WikiPage::new("Belle_Delphine");
-    let target_page = WikiPage::new("Communism");
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() < 3 {
+        return Err(anyhow!("You must provide a start and target page!"));
+    }
+
+    let initial_page = WikiPage::new(&args[1]);
+    let target_page = WikiPage::new(&args[2]);
 
     let mut wiki_racer = WikiRacer::new(initial_page, target_page).await?;
 
