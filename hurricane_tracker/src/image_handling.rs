@@ -4,6 +4,8 @@ use image::imageops;
 use resvg::{tiny_skia, usvg};
 
 pub fn apply_turtle_to_atlantic_basin(svg_path: &str, png_path: &str) -> Result<()> {
+    // TODO: Need to wait until the svg is actually saved. This is currently not being able to read the svg
+    // Because the file is not created by the time it gets here.
     let mut opt = usvg::Options::default();
     // Get file's absolute directory.
     opt.resources_dir = std::fs::canonicalize(svg_path)?
